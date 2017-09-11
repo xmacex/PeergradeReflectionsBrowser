@@ -4,6 +4,9 @@ var reflectiondiv = $(".reflection");
 /** List of student names */
 var students = [];
 
+/** List of assignments the server knows about */
+var assignments = [];
+
 /** Index to the list of student names */
 var i = 0;
 
@@ -15,11 +18,24 @@ var roundInt = function(i) {
 }
 
 /**
- * Load student names asynchronously, and load the first one
+ * Load assignments asynchronously, and load the first one
  */
-jQuery.getJSON("/liststudents", function(data) {
-	students = data;
-	nextStudent(0);
+jQuery.getJSON("/listassignments", function(data) {
+	assignments = data;
+	assignments.forEach(function(a) {
+		var o = new Option(a, a);
+		o.innerHTML = a;
+		$("#assignmentselector").append(o);
+	});
+	$("#assignmentselector").change(function() {
+		jQuery.getJSON("/liststudents?a=" + $("#assignmentselector").val(), function(data) {
+			students = data;
+		nextStudent(0);
+		});
+	});
+	/** Initialize before the user has provided any interactions */
+	$("#assignmentselector").val(assignments[0]);
+	$("#assignmentselector").trigger("change");
 });
 
 /**
@@ -44,7 +60,7 @@ var nextStudent = function(s) {
  */
 var loadStudent = function(i, e) {
 	console.log("Loading " + students[i]);
-	$.get("/student?s=" + students[i], function(data) {
+	$.get("/student?s=" + students[i] + "&a=" + $("#assignmentselector").val(), function(data) {
 		$(e).replaceWith(data);
 		$("#refllength").text("≈ " + roundInt($(".reflection").text().split(" ").length) + " words");
 	});

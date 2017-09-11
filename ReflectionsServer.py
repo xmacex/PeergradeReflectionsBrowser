@@ -40,12 +40,13 @@ class Reflections:
     reflectionsLogger = logging.getLogger('reflectionsLogger')
     reflectionsLogger.setLevel(logging.INFO)
     
-    filename = None
+    filenames = []
     storage = dict()
     
-    def __init__(self, filename):
-        self.filename = filename
-        self.storage = self.readZip(filename)
+    def __init__(self, filenames):
+        self.filenames = filenames
+        for filename in filenames:
+            self.storage[filename.rstrip(".zip")] = self.readZip(filename)
         self.reflectionsLogger.debug(self.storage)
 
     def readZip(self, filename):
@@ -57,19 +58,21 @@ class Reflections:
 
         return s
         
-    def listStudents(self):
+    def listAssignments(self):
         return list(self.storage.keys())
+
+    def listStudents(self, assignment):
+        return list(self.storage[assignment].keys())
                         
-    def getStudent(self, student):
+    def getStudent(self, assignment, student):
         self.reflectionsLogger.info("Retrieving {}".format(student))
-        # return self.storage[student].text_content()
-        return self.storage[student]
+        return self.storage[assignment][student]
 
 class ReflectionsHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     httpServerLogger = logging.getLogger('httpServerLogger')
     httpServerLogger.setLevel(logging.INFO)
 
-    reflections = Reflections("reflections-week1.zip")
+    reflections = Reflections(["reflections-week2.zip", "reflections-week3.zip"])
 
     def passfile(self, filename):
         with open(filename) as fd:
@@ -100,10 +103,21 @@ class ReflectionsHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
             self.wfile.write(bytes(self.passfile("ReflectionsClient.js"), "utf-8"))
+
+        if parsed_path.path == '/listassignments':
+            self.httpServerLogger.info("Listing assignments")
+            assignments = self.reflections.listAssignments()
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+
+            self.wfile.write(bytes(json.dumps(assignments), "utf-8"))
         
         if parsed_path.path == '/liststudents':
+            assignment = queryparams['a'][0]
             self.httpServerLogger.info("Listing students")
-            students = self.reflections.listStudents()
+            students = self.reflections.listStudents(assignment)
             
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -113,6 +127,7 @@ class ReflectionsHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(bytes(json.dumps(students), "utf-8"))
 
         elif parsed_path.path == '/student':
+            assignment = queryparams['a'][0]
             studentname = queryparams['s'][0]
             
             self.httpServerLogger.info("Returning student".format(studentname))
@@ -121,7 +136,7 @@ class ReflectionsHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
 
-            self.wfile.write(bytes(str(self.reflections.getStudent(studentname)), "utf-8"))
+            self.wfile.write(bytes(str(self.reflections.getStudent(assignment, studentname)), "utf-8"))
 
 def main():
     server = http.server.HTTPServer(('', 8000), ReflectionsHTTPRequestHandler)
