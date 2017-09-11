@@ -10,5 +10,5 @@ Built for IT University of Copenhagen course *Navigating Complexity: Mapping Vis
 1. Download each assignment as zip files from Peergrade
 1. Place the zip files in the same directory as the `ReflectionsServer.py`
 1. List the filenames in `ReflectionsServer.py` variable called `reflections`, currently on line 75
-1. Say `python3 ReflectionServer.py`
+1. Say `python3 ./ReflectionsServer.py`
 1. Navigate to http://localhost:8000
