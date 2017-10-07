@@ -53,8 +53,9 @@ class Reflections:
         s = dict()
         with zipfile.ZipFile(filename) as zf:
             for name in zf.namelist():
-                with zf.open(name) as file:
-                    s[name.rstrip(".html")] = Reflection(file.read().decode('utf-8'))
+                if not name.endswith(".ipynb"):
+                    with zf.open(name) as file:
+                        s[name.rstrip(".html")] = Reflection(file.read().decode('utf-8'))
 
         return s
         
@@ -72,7 +73,12 @@ class ReflectionsHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     httpServerLogger = logging.getLogger('httpServerLogger')
     httpServerLogger.setLevel(logging.INFO)
 
-    reflections = Reflections(["reflections-week2.zip", "reflections-week3.zip"])
+    reflections = Reflections([
+        "reflections-week2.zip",
+        "reflections-week3.zip",
+        "reflections-week4.zip",
+        "reflections-week5.zip",
+        "reflections-week6.zip"])
 
     def passfile(self, filename):
         with open(filename) as fd:
